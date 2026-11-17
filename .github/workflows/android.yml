@@ -1,0 +1,29 @@
+name: Build Hi-Tech Dialer APK
+on:
+  push:
+    paths: ['android-src.zip', '.github/workflows/android.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir android && unzip -q android-src.zip -d android
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v3
+        with: { gradle-version: '8.7' }
+      - name: Build APK
+        env: { BUILD_NO: '${{ github.run_number }}' }
+        run: gradle -p android assembleDebug --no-daemon --stacktrace
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk HiTechDialer.apk
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dialer-v1.0.${{ github.run_number }}
+          name: Hi-Tech Dialer 1.0.${{ github.run_number }}
+          make_latest: true
+          body: Android app for the sales team — logs company-SIM calls, uploads call recordings to the CRM and asks for call status. Install HiTechDialer.apk on the sales phone.
+          files: HiTechDialer.apk
